@@ -174,7 +174,7 @@ def train_teacher(args, model, data, device):
 
 
 def main(args):
-    device = torch.device("cuda:0")
+    device = torch.device("cpu") if args.gpu<0 else torch.device("cuda:" + str(args.gpu))
     data, data_info = get_data_loader(args)
     model_dict = collect_model(args, data_info)
 

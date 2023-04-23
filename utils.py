@@ -95,19 +95,21 @@ def get_teacher(args, data_info):
     heads1 = ([args.t_num_heads] * args.t1_num_layers) + [args.t_num_out_heads]
     heads2 = ([args.t_num_heads] * args.t2_num_layers) + [args.t_num_out_heads]
     heads3 = ([args.t_num_heads] * args.t3_num_layers) + [args.t_num_out_heads]
+    device = torch.device("cpu") if args.gpu<0 else torch.device("cuda:" + str(args.gpu))
     model1 = GAT(data_info['g'], args.t1_num_layers, data_info['num_feats'], args.t1_num_hidden, data_info['n_classes'],
-                 heads1, F.elu, args.in_drop, args.attn_drop, args.alpha, args.residual)
+                 heads1, F.elu, args.in_drop, args.attn_drop, args.alpha, args.residual,device)
     model2 = GAT(data_info['g'], args.t2_num_layers, data_info['num_feats'], args.t2_num_hidden, data_info['n_classes'],
-                 heads2, F.elu, args.in_drop, args.attn_drop, args.alpha, args.residual)
+                 heads2, F.elu, args.in_drop, args.attn_drop, args.alpha, args.residual,device)
     model3 = GAT(data_info['g'], args.t3_num_layers, data_info['num_feats'], args.t3_num_hidden, data_info['n_classes'],
-                 heads3, F.elu, args.in_drop, args.attn_drop, args.alpha, args.residual)
+                 heads3, F.elu, args.in_drop, args.attn_drop, args.alpha, args.residual,device)
     return model1, model2, model3
 
 
 def get_student(args, data_info):
     heads = ([args.s_num_heads] * args.s_num_layers) + [args.s_num_out_heads]
+    device = torch.device("cpu") if args.gpu<0 else torch.device("cuda:" + str(args.gpu))
     model = GAT(data_info['g'], args.s_num_layers, data_info['num_feats'], args.s_num_hidden, data_info['n_classes'],
-                heads, F.elu, args.in_drop, args.attn_drop, args.alpha, args.residual)
+                heads, F.elu, args.in_drop, args.attn_drop, args.alpha, args.residual,device)
     return model
 
 
@@ -138,8 +140,9 @@ def get_data_loader(args):
     valid_dataloader = DataLoader(valid_dataset, batch_size=args.batch_size, collate_fn=collate, num_workers=2)
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, collate_fn=collate, num_workers=2)
 
-    n_classes = train_dataset.labels.shape[1]
-    num_feats = train_dataset.features.shape[1]
+    n_classes = train_dataset.num_labels
+    g,feat,label = train_dataset[0]
+    num_feats = feat.shape[1]
     g = train_dataset.graph
     data_info = {}
     data_info['n_classes'] = n_classes
@@ -162,7 +165,7 @@ def load_checkpoint(model, path, device):
 
 
 def collect_model(args, data_info):
-    device = torch.device("cuda:0")
+    device = torch.device("cpu") if args.gpu<0 else torch.device("cuda:" + str(args.gpu))
 
     feat_info = get_feat_info(args)
 
